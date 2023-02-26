@@ -17,6 +17,11 @@ type PatchOptions struct {
 	// Create a reverse patch
 	Reverse bool
 
+	// If true, we're building a patch that we are going to apply using
+	// "git apply --reverse". In that case the filtering of partial hunks needs
+	// to be done a little differently.
+	WillBeAppliedReverse bool
+
 	// Whether to keep or discard the original diff header including the
 	// "index deadbeef..fa1afe1 100644" line.
 	KeepOriginalHeader bool
@@ -104,7 +109,8 @@ outer:
 	formattedHunks := ""
 	var formattedHunk string
 	for _, hunk := range hunksInRange {
-		startOffset, formattedHunk = hunk.formatWithChanges(lineIndices, opts.Reverse, startOffset)
+		startOffset, formattedHunk = hunk.formatWithChanges(
+			lineIndices, opts.Reverse, opts.WillBeAppliedReverse, startOffset)
 		formattedHunks += formattedHunk
 	}
 
