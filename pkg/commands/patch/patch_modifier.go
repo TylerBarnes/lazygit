@@ -96,6 +96,9 @@ func NewPatchModifier(log *logrus.Entry, filename string, diffText string) *Patc
 }
 
 func (d *PatchModifier) ModifiedPatchForLines(lineIndices []int, opts PatchOptions) string {
+	if opts.Reverse && opts.WillBeAppliedReverse {
+		panic("reverse and willBeAppliedReverse are currently not compatible")
+	}
 	if opts.Reverse && opts.KeepOriginalHeader {
 		panic("reverse and keepOriginalHeader are not compatible")
 	}
