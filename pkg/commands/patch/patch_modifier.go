@@ -19,8 +19,12 @@ type PatchOptions struct {
 	Reverse bool
 
 	// If true, we're building a patch that we are going to apply using
-	// "git apply --reverse". In that case the filtering of partial hunks needs
-	// to be done a little differently.
+	// "git apply --reverse". In other words, we are not flipping the '+' and
+	// '-' ourselves while creating the patch, but git is going to do that when
+	// applying. This has consequences for which lines we need to keep or
+	// discard when filtering lines from partial hunks.
+	//
+	// Currently incompatible with Reverse.
 	WillBeAppliedReverse bool
 
 	// Whether to keep or discard the original diff header including the
