@@ -14,7 +14,8 @@ var (
 )
 
 type PatchOptions struct {
-	// Create a reverse patch
+	// Create a reverse patch; in other words, flip all the '+' and '-' while
+	// generating the patch.
 	Reverse bool
 
 	// If true, we're building a patch that we are going to apply using
