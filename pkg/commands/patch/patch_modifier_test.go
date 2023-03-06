@@ -115,14 +115,13 @@ const exampleHunk = `@@ -1,5 +1,5 @@
 // TestModifyPatchForRange is a function.
 func TestModifyPatchForRange(t *testing.T) {
 	type scenario struct {
-		testName             string
-		filename             string
-		diffText             string
-		firstLineIndex       int
-		lastLineIndex        int
-		reverse              bool
-		willBeAppliedReverse bool
-		expected             string
+		testName       string
+		filename       string
+		diffText       string
+		firstLineIndex int
+		lastLineIndex  int
+		strategy       Strategy
+		expected       string
 	}
 
 	scenarios := []scenario{
@@ -131,7 +130,7 @@ func TestModifyPatchForRange(t *testing.T) {
 			filename:       "filename",
 			firstLineIndex: -1,
 			lastLineIndex:  -1,
-			reverse:        false,
+			strategy:       Forward,
 			diffText:       simpleDiff,
 			expected:       "",
 		},
@@ -140,7 +139,7 @@ func TestModifyPatchForRange(t *testing.T) {
 			filename:       "filename",
 			firstLineIndex: 5,
 			lastLineIndex:  5,
-			reverse:        false,
+			strategy:       Forward,
 			diffText:       simpleDiff,
 			expected:       "",
 		},
@@ -149,7 +148,7 @@ func TestModifyPatchForRange(t *testing.T) {
 			filename:       "filename",
 			firstLineIndex: 0,
 			lastLineIndex:  11,
-			reverse:        false,
+			strategy:       Forward,
 			diffText:       simpleDiff,
 			expected: `--- a/filename
 +++ b/filename
@@ -167,7 +166,7 @@ func TestModifyPatchForRange(t *testing.T) {
 			filename:       "filename",
 			firstLineIndex: 6,
 			lastLineIndex:  6,
-			reverse:        false,
+			strategy:       Forward,
 			diffText:       simpleDiff,
 			expected: `--- a/filename
 +++ b/filename
@@ -184,7 +183,7 @@ func TestModifyPatchForRange(t *testing.T) {
 			filename:       "filename",
 			firstLineIndex: 7,
 			lastLineIndex:  7,
-			reverse:        false,
+			strategy:       Forward,
 			diffText:       simpleDiff,
 			expected: `--- a/filename
 +++ b/filename
@@ -202,7 +201,7 @@ func TestModifyPatchForRange(t *testing.T) {
 			filename:       "filename",
 			firstLineIndex: -100,
 			lastLineIndex:  100,
-			reverse:        false,
+			strategy:       Forward,
 			diffText:       simpleDiff,
 			expected: `--- a/filename
 +++ b/filename
@@ -220,7 +219,7 @@ func TestModifyPatchForRange(t *testing.T) {
 			filename:       "filename",
 			firstLineIndex: 0,
 			lastLineIndex:  11,
-			reverse:        true,
+			strategy:       ReverseUncommitted,
 			diffText:       simpleDiff,
 			expected: `--- a/filename
 +++ b/filename
@@ -238,7 +237,7 @@ func TestModifyPatchForRange(t *testing.T) {
 			filename:       "filename",
 			firstLineIndex: 6,
 			lastLineIndex:  6,
-			reverse:        true,
+			strategy:       ReverseUncommitted,
 			diffText:       simpleDiff,
 			expected: `--- a/filename
 +++ b/filename
@@ -256,7 +255,7 @@ func TestModifyPatchForRange(t *testing.T) {
 			filename:       "filename",
 			firstLineIndex: 7,
 			lastLineIndex:  7,
-			reverse:        true,
+			strategy:       ReverseUncommitted,
 			diffText:       simpleDiff,
 			expected: `--- a/filename
 +++ b/filename
@@ -273,7 +272,7 @@ func TestModifyPatchForRange(t *testing.T) {
 			filename:       "filename",
 			firstLineIndex: -100,
 			lastLineIndex:  100,
-			reverse:        false,
+			strategy:       Forward,
 			diffText:       addNewlineToEndOfFile,
 			expected: `--- a/filename
 +++ b/filename
@@ -291,7 +290,7 @@ func TestModifyPatchForRange(t *testing.T) {
 			filename:       "filename",
 			firstLineIndex: 8,
 			lastLineIndex:  8,
-			reverse:        true,
+			strategy:       ReverseUncommitted,
 			diffText:       addNewlineToEndOfFile,
 			expected: `--- a/filename
 +++ b/filename
@@ -309,7 +308,7 @@ func TestModifyPatchForRange(t *testing.T) {
 			filename:       "filename",
 			firstLineIndex: 10,
 			lastLineIndex:  10,
-			reverse:        true,
+			strategy:       ReverseUncommitted,
 			diffText:       addNewlineToEndOfFile,
 			expected: `--- a/filename
 +++ b/filename
@@ -325,7 +324,7 @@ func TestModifyPatchForRange(t *testing.T) {
 			filename:       "filename",
 			firstLineIndex: -100,
 			lastLineIndex:  100,
-			reverse:        false,
+			strategy:       Forward,
 			diffText:       removeNewlinefromEndOfFile,
 			expected: `--- a/filename
 +++ b/filename
@@ -343,7 +342,7 @@ func TestModifyPatchForRange(t *testing.T) {
 			filename:       "filename",
 			firstLineIndex: 8,
 			lastLineIndex:  8,
-			reverse:        false,
+			strategy:       Forward,
 			diffText:       removeNewlinefromEndOfFile,
 			expected: `--- a/filename
 +++ b/filename
@@ -359,7 +358,7 @@ func TestModifyPatchForRange(t *testing.T) {
 			filename:       "filename",
 			firstLineIndex: 9,
 			lastLineIndex:  9,
-			reverse:        false,
+			strategy:       Forward,
 			diffText:       removeNewlinefromEndOfFile,
 			expected: `--- a/filename
 +++ b/filename
@@ -377,7 +376,7 @@ func TestModifyPatchForRange(t *testing.T) {
 			filename:       "filename",
 			firstLineIndex: -100,
 			lastLineIndex:  100,
-			reverse:        false,
+			strategy:       Forward,
 			diffText:       twoHunks,
 			expected: `--- a/filename
 +++ b/filename
@@ -404,7 +403,7 @@ func TestModifyPatchForRange(t *testing.T) {
 			filename:       "filename",
 			firstLineIndex: 7,
 			lastLineIndex:  15,
-			reverse:        false,
+			strategy:       Forward,
 			diffText:       twoHunks,
 			expected: `--- a/filename
 +++ b/filename
@@ -430,7 +429,7 @@ func TestModifyPatchForRange(t *testing.T) {
 			filename:       "filename",
 			firstLineIndex: 7,
 			lastLineIndex:  15,
-			reverse:        true,
+			strategy:       ReverseUncommitted,
 			diffText:       twoHunks,
 			expected: `--- a/filename
 +++ b/filename
@@ -456,7 +455,7 @@ func TestModifyPatchForRange(t *testing.T) {
 			filename:       "newfile",
 			firstLineIndex: -100,
 			lastLineIndex:  100,
-			reverse:        false,
+			strategy:       Forward,
 			diffText:       newFile,
 			expected: `--- a/newfile
 +++ b/newfile
@@ -471,7 +470,7 @@ func TestModifyPatchForRange(t *testing.T) {
 			filename:       "newfile",
 			firstLineIndex: 6,
 			lastLineIndex:  7,
-			reverse:        false,
+			strategy:       Forward,
 			diffText:       newFile,
 			expected: `--- a/newfile
 +++ b/newfile
@@ -485,7 +484,7 @@ func TestModifyPatchForRange(t *testing.T) {
 			filename:       "newfile",
 			firstLineIndex: -100,
 			lastLineIndex:  100,
-			reverse:        true,
+			strategy:       ReverseUncommitted,
 			diffText:       newFile,
 			expected: `--- a/newfile
 +++ b/newfile
@@ -500,7 +499,7 @@ func TestModifyPatchForRange(t *testing.T) {
 			filename:       "newfile",
 			firstLineIndex: -100,
 			lastLineIndex:  100,
-			reverse:        false,
+			strategy:       Forward,
 			diffText:       addNewlineToPreviouslyEmptyFile,
 			expected: `--- a/newfile
 +++ b/newfile
@@ -514,7 +513,7 @@ func TestModifyPatchForRange(t *testing.T) {
 			filename:       "newfile",
 			firstLineIndex: -100,
 			lastLineIndex:  100,
-			reverse:        true,
+			strategy:       ReverseUncommitted,
 			diffText:       addNewlineToPreviouslyEmptyFile,
 			expected: `--- a/newfile
 +++ b/newfile
@@ -524,13 +523,12 @@ func TestModifyPatchForRange(t *testing.T) {
 `,
 		},
 		{
-			testName:             "adding part of a hunk",
-			filename:             "filename",
-			firstLineIndex:       6,
-			lastLineIndex:        7,
-			reverse:              false,
-			willBeAppliedReverse: false,
-			diffText:             twoChangesInOneHunk,
+			testName:       "adding part of a hunk",
+			filename:       "filename",
+			firstLineIndex: 6,
+			lastLineIndex:  7,
+			strategy:       Forward,
+			diffText:       twoChangesInOneHunk,
 			expected: `--- a/filename
 +++ b/filename
 @@ -1,5 +1,5 @@
@@ -543,13 +541,12 @@ func TestModifyPatchForRange(t *testing.T) {
 `,
 		},
 		{
-			testName:             "adding part of a hunk, will-be-applied-reverse",
-			filename:             "filename",
-			firstLineIndex:       6,
-			lastLineIndex:        7,
-			reverse:              false,
-			willBeAppliedReverse: true,
-			diffText:             twoChangesInOneHunk,
+			testName:       "adding part of a hunk, will-be-applied-reverse",
+			filename:       "filename",
+			firstLineIndex: 6,
+			lastLineIndex:  7,
+			strategy:       ReverseCommitted,
+			diffText:       twoChangesInOneHunk,
 			expected: `--- a/filename
 +++ b/filename
 @@ -1,5 +1,5 @@
@@ -568,9 +565,8 @@ func TestModifyPatchForRange(t *testing.T) {
 		t.Run(s.testName, func(t *testing.T) {
 			result := ModifiedPatchForRange(nil, s.filename, s.diffText, s.firstLineIndex, s.lastLineIndex,
 				PatchOptions{
-					Reverse:              s.reverse,
-					WillBeAppliedReverse: s.willBeAppliedReverse,
-					KeepOriginalHeader:   false,
+					Strategy:           s.strategy,
+					KeepOriginalHeader: false,
 				})
 			if !assert.Equal(t, s.expected, result) {
 				fmt.Println(result)

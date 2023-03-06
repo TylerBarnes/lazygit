@@ -180,9 +180,14 @@ func (self *StagingController) applySelection(reverse bool) error {
 		return nil
 	}
 
+	strategy := patch.Forward
+	if reverse {
+		strategy = patch.ReverseUncommitted
+	}
+
 	firstLineIdx, lastLineIdx := state.SelectedRange()
 	patch := patch.ModifiedPatchForRange(self.c.Log, path, state.GetDiff(), firstLineIdx, lastLineIdx,
-		patch.PatchOptions{Reverse: reverse, KeepOriginalHeader: false})
+		patch.PatchOptions{Strategy: strategy, KeepOriginalHeader: false})
 
 	if patch == "" {
 		return nil
@@ -227,9 +232,15 @@ func (self *StagingController) editHunk() error {
 	}
 
 	hunk := state.CurrentHunk()
+
+	strategy := patch.Forward
+	if self.staged {
+		strategy = patch.ReverseUncommitted
+	}
+
 	patchText := patch.ModifiedPatchForRange(
 		self.c.Log, path, state.GetDiff(), hunk.FirstLineIdx, hunk.LastLineIdx(),
-		patch.PatchOptions{Reverse: self.staged, KeepOriginalHeader: false},
+		patch.PatchOptions{Strategy: strategy, KeepOriginalHeader: false},
 	)
 	patchFilepath, err := self.git.WorkingTree.SaveTemporaryPatch(patchText)
 	if err != nil {
@@ -252,7 +263,7 @@ func (self *StagingController) editHunk() error {
 	lineCount := strings.Count(editedPatchText, "\n") + 1
 	newPatchText := patch.ModifiedPatchForRange(
 		self.c.Log, path, editedPatchText, 0, lineCount,
-		patch.PatchOptions{Reverse: false, KeepOriginalHeader: false},
+		patch.PatchOptions{Strategy: patch.Forward, KeepOriginalHeader: false},
 	)
 	if err := self.git.WorkingTree.ApplyPatch(newPatchText, "cached"); err != nil {
 		return self.c.Error(err)

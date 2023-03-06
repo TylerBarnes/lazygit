@@ -45,7 +45,7 @@ func headerInfo(header string) (int, int, string) {
 	return oldStart, newStart, heading
 }
 
-func (hunk *PatchHunk) updatedLines(lineIndices []int, reverse bool, willBeAppliedReverse bool) []string {
+func (hunk *PatchHunk) updatedLines(lineIndices []int, strategy Strategy) []string {
 	skippedNewlineMessageIndex := -1
 	newLines := []string{}
 
@@ -58,7 +58,7 @@ func (hunk *PatchHunk) updatedLines(lineIndices []int, reverse bool, willBeAppli
 		isLineSelected := lo.Contains(lineIndices, lineIdx)
 
 		firstChar, content := line[:1], line[1:]
-		transformedFirstChar := transformedFirstChar(firstChar, reverse, willBeAppliedReverse, isLineSelected)
+		transformedFirstChar := transformedFirstChar(firstChar, strategy, isLineSelected)
 
 		if isLineSelected || (transformedFirstChar == "\\" && skippedNewlineMessageIndex != lineIdx) || transformedFirstChar == " " {
 			newLines = append(newLines, transformedFirstChar+content)
@@ -74,8 +74,8 @@ func (hunk *PatchHunk) updatedLines(lineIndices []int, reverse bool, willBeAppli
 	return newLines
 }
 
-func transformedFirstChar(firstChar string, reverse bool, willBeAppliedReverse bool, isLineSelected bool) string {
-	if reverse {
+func transformedFirstChar(firstChar string, strategy Strategy, isLineSelected bool) string {
+	if strategy == ReverseUncommitted {
 		if !isLineSelected && firstChar == "+" {
 			return " "
 		} else if firstChar == "-" {
@@ -88,7 +88,7 @@ func transformedFirstChar(firstChar string, reverse bool, willBeAppliedReverse b
 	}
 
 	linesToKeepInPatchContext := "-"
-	if willBeAppliedReverse {
+	if strategy == ReverseCommitted {
 		linesToKeepInPatchContext = "+"
 	}
 	if !isLineSelected && firstChar == linesToKeepInPatchContext {
@@ -102,9 +102,9 @@ func (hunk *PatchHunk) formatHeader(oldStart int, oldLength int, newStart int, n
 	return fmt.Sprintf("@@ -%d,%d +%d,%d @@%s\n", oldStart, oldLength, newStart, newLength, heading)
 }
 
-func (hunk *PatchHunk) formatWithChanges(lineIndices []int, reverse bool, willBeAppliedReverse bool, startOffset int) (int, string) {
-	bodyLines := hunk.updatedLines(lineIndices, reverse, willBeAppliedReverse)
-	startOffset, header, ok := hunk.updatedHeader(bodyLines, startOffset, reverse)
+func (hunk *PatchHunk) formatWithChanges(lineIndices []int, strategy Strategy, startOffset int) (int, string) {
+	bodyLines := hunk.updatedLines(lineIndices, strategy)
+	startOffset, header, ok := hunk.updatedHeader(bodyLines, startOffset, strategy == ReverseUncommitted)
 	if !ok {
 		return startOffset, ""
 	}

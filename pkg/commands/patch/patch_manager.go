@@ -178,9 +178,8 @@ func (p *PatchManager) renderPlainPatchForFile(filename string, willBeAppliedRev
 		// generate a new diff with just the selected lines
 		return ModifiedPatchForLines(p.Log, filename, info.diff, info.includedLineIndices,
 			PatchOptions{
-				Reverse:              false,
-				WillBeAppliedReverse: willBeAppliedReverse,
-				KeepOriginalHeader:   true,
+				Strategy:           ReverseCommitted,
+				KeepOriginalHeader: true,
 			})
 	default:
 		return ""

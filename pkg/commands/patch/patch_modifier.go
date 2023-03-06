@@ -13,19 +13,27 @@ var (
 	patchHeaderRegexp = regexp.MustCompile(`(?ms)(^diff.*?)^@@`)
 )
 
-type PatchOptions struct {
+type Strategy int
+
+const (
+	// default patch strategy
+	Forward Strategy = iota
 	// Create a reverse patch; in other words, flip all the '+' and '-' while
 	// generating the patch.
-	Reverse bool
+	// Use this when the patch is yet to be committed and you want to reverse it
+	// (e.g. in the staging panel)
+	ReverseUncommitted
+	// Create a patch that will applied in reverse with `git apply --reverse`.
+	// So, don't flip the '+' and '-' lines in the selection, but update the _unselected_
+	// lines to reflect the end-state of the patch. That means '+' lines become context
+	// lines and '-' lines get removed.
+	// Use this when the patch has already been committed and you want to reverse it.
+	// (e.g. in the custom patch panel)
+	ReverseCommitted
+)
 
-	// If true, we're building a patch that we are going to apply using
-	// "git apply --reverse". In other words, we are not flipping the '+' and
-	// '-' ourselves while creating the patch, but git is going to do that when
-	// applying. This has consequences for which lines we need to keep or
-	// discard when filtering lines from partial hunks.
-	//
-	// Currently incompatible with Reverse.
-	WillBeAppliedReverse bool
+type PatchOptions struct {
+	Strategy Strategy
 
 	// Whether to keep or discard the original diff header including the
 	// "index deadbeef..fa1afe1 100644" line.
@@ -96,10 +104,7 @@ func NewPatchModifier(log *logrus.Entry, filename string, diffText string) *Patc
 }
 
 func (d *PatchModifier) ModifiedPatchForLines(lineIndices []int, opts PatchOptions) string {
-	if opts.Reverse && opts.WillBeAppliedReverse {
-		panic("reverse and willBeAppliedReverse are currently not compatible")
-	}
-	if opts.Reverse && opts.KeepOriginalHeader {
+	if opts.Strategy == ReverseCommitted && opts.KeepOriginalHeader {
 		panic("reverse and keepOriginalHeader are not compatible")
 	}
 
@@ -122,7 +127,7 @@ outer:
 	var formattedHunk string
 	for _, hunk := range hunksInRange {
 		startOffset, formattedHunk = hunk.formatWithChanges(
-			lineIndices, opts.Reverse, opts.WillBeAppliedReverse, startOffset)
+			lineIndices, opts.Strategy, startOffset)
 		formattedHunks += formattedHunk
 	}
 
